@@ -1,0 +1,26 @@
+# Render 蓝图配置 —— 也可在 Render 网页手动创建，二选一
+# 用法：在 Render 仪表盘选 "Blueprint" → 连接 Git 仓库 → 自动按此文件创建资源
+
+databases:
+  - name: date-app-db
+    plan: free
+    databaseName: dateapp
+    ipAllowList: []   # 允许外部连接（本地开发也可连）
+
+services:
+  - type: web
+    name: date-app
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true   # Render 自动生成随机密钥
+      - key: DATABASE_URL
+        fromDatabase:
+          name: date-app-db
+          property: connectionString
