@@ -1,15 +1,17 @@
 const { Pool } = require('pg')
 
-// Render/生产通过 DATABASE_URL 连接 Postgres；本地开发可设 DATABASE_URL 指向本地或远程 pg
+// DATABASE_URL 由部署平台注入（Supabase / Railway / Render）
+const connectionString = process.env.DATABASE_URL || 'postgres://localhost:5432/dateapp'
+
+// 远程数据库（含 DATABASE_URL）一律启用 SSL，本地开发不启用
+const isRemote = !!process.env.DATABASE_URL
+
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL || 'postgres://localhost:5432/dateapp',
-  // 生产环境强制 SSL；本地连接无需
-  ssl: process.env.DATABASE_URL && process.env.DATABASE_URL.includes('render')
-    ? { rejectUnauthorized: false }
-    : (process.env.PGSSL === '1' ? { rejectUnauthorized: false } : false),
+  connectionString,
+  ssl: isRemote ? { rejectUnauthorized: false } : false,
 })
 
-// pg 客户端一次只执行一条语句，分别建表
+// 建表（pg 客户端一次执行一条语句）
 const TABLES = [
   `CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
