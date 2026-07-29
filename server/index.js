@@ -1,4 +1,5 @@
 /** 本地开发入口：启动 Express + 初始化数据库 */
+require('dotenv').config()
 const app = require('./app')
 const { init } = require('./db')
 
