@@ -20,6 +20,20 @@ module.exports = async (req, res) => {
   if (req.url.startsWith('/api/health')) {
     return res.status(200).json({ ok: true, direct: true, hasDb: !!process.env.DATABASE_URL, hasJwt: !!process.env.JWT_SECRET })
   }
+  if (req.url.startsWith('/api/dbtest')) {
+    try {
+      await loadModules()
+      const { pool } = require('../server/db.js')
+      const t = Date.now()
+      const r = await Promise.race([
+        pool.query('SELECT 1 as test'),
+        new Promise((_, rej) => setTimeout(() => rej(new Error('query 超时 8s')), 8000))
+      ])
+      return res.json({ ok: true, time: (Date.now() - t) + 'ms', rows: r.rows })
+    } catch (e) {
+      return res.status(500).json({ error: e.message, code: e.code, errno: e.errno, host: e.host, stack: e.stack ? e.stack.split('\n').slice(0,5) : null })
+    }
+  }
   try {
     await loadModules()
   } catch (e) {
