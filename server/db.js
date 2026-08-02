@@ -9,6 +9,12 @@ const isRemote = !!process.env.DATABASE_URL
 const pool = new Pool({
   connectionString,
   ssl: isRemote ? { rejectUnauthorized: false } : false,
+  connectionTimeoutMillis: 8000,
+  idleTimeoutMillis: 30000,
+})
+
+pool.on('error', (err) => {
+  console.error('[db] pool 错误:', err.message)
 })
 
 // 建表（pg 客户端一次执行一条语句）
@@ -43,10 +49,12 @@ const TABLES = [
 ]
 
 async function init() {
+  const t = Date.now()
+  console.log('[db] 开始建表... host=', connectionString.split('@')[1] || 'localhost')
   for (const sql of TABLES) {
     await pool.query(sql)
   }
-  console.log('[db] 表已就绪')
+  console.log('[db] 表已就绪，耗时', Date.now() - t, 'ms')
 }
 
 module.exports = { pool, init }

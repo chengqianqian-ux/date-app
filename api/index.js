@@ -7,10 +7,14 @@ const { init } = require('../server/db.js')
 let initialized = false
 async function ensureInit() {
   if (!initialized) {
+    console.log('[api] 开始建表...')
     try {
-      await init()
+      await Promise.race([
+        init(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('init 超时 8s')), 8000)),
+      ])
     } catch (e) {
-      console.error('[db] init 失败:', e.message)
+      console.error('[api] init 失败:', e.message)
     }
     initialized = true
   }
@@ -19,6 +23,10 @@ async function ensureInit() {
 // 包一层，确保数据库表已建好
 const handler = serverless(app)
 module.exports = async (req, res) => {
-  await ensureInit()
+  console.log('[api] 请求:', req.method, req.url)
+  // health 不依赖数据库，跳过建表，方便诊断
+  if (!req.url.startsWith('/api/health')) {
+    await ensureInit()
+  }
   return handler(req, res)
 }
