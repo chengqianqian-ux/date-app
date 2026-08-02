@@ -1,7 +1,10 @@
 /** Vercel Serverless 入口：所有 /api/* 请求都路由到这里，由 Express 处理 */
 const serverless = require('serverless-http')
+console.log('[api] loaded serverless-http')
 const app = require('../server/app.js')
+console.log('[api] loaded app')
 const { init } = require('../server/db.js')
+console.log('[api] loaded db, isRemote=', !!process.env.DATABASE_URL, 'hasJwt=', !!process.env.JWT_SECRET)
 
 // 懒加载建表（避免冷启动时每次都建表，但首次冷启动会建）
 let initialized = false
@@ -24,9 +27,10 @@ async function ensureInit() {
 const handler = serverless(app)
 module.exports = async (req, res) => {
   console.log('[api] 请求:', req.method, req.url)
-  // health 不依赖数据库，跳过建表，方便诊断
-  if (!req.url.startsWith('/api/health')) {
-    await ensureInit()
+  // health 直接返回，绕过 serverless-http，测试 function 是否启动
+  if (req.url.startsWith('/api/health')) {
+    return res.status(200).json({ ok: true, direct: true, hasDb: !!process.env.DATABASE_URL, hasJwt: !!process.env.JWT_SECRET })
   }
+  await ensureInit()
   return handler(req, res)
 }
