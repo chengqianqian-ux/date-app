@@ -34,6 +34,26 @@ module.exports = async (req, res) => {
       return res.status(500).json({ error: e.message, code: e.code, errno: e.errno, host: e.host, stack: e.stack ? e.stack.split('\n').slice(0,5) : null })
     }
   }
+  if (req.url.startsWith('/api/inittest')) {
+    try {
+      await loadModules()
+      const t = Date.now()
+      await init()
+      return res.json({ ok: true, time: (Date.now() - t) + 'ms' })
+    } catch (e) {
+      return res.status(500).json({ error: e.message, code: e.code, stack: e.stack ? e.stack.split('\n').slice(0,5) : null })
+    }
+  }
+  if (req.url.startsWith('/api/exprtest')) {
+    try {
+      await loadModules()
+      if (!initialized) { try { await init() } catch(e){ console.error('[api] init:', e.message) }; initialized = true }
+      const handler = serverless(app)
+      return handler(req, res)
+    } catch (e) {
+      return res.status(500).json({ error: e.message })
+    }
+  }
   try {
     await loadModules()
   } catch (e) {
