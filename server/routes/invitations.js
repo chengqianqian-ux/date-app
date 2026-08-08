@@ -105,6 +105,7 @@ router.post('/:id/cancel', authRequired, async (req, res) => {
 
 // 完成打卡：已接受的邀请，任一方都能标记完成
 router.post('/:id/complete', authRequired, async (req, res) => {
+  const { mood } = req.body || {}
   try {
     const r = await pool.query('SELECT * FROM invitations WHERE id = $1', [req.params.id])
     if (r.rows.length === 0) return res.status(404).json({ error: '邀请不存在' })
@@ -113,13 +114,56 @@ router.post('/:id/complete', authRequired, async (req, res) => {
     if (inv.status !== 'accepted') return res.status(400).json({ error: '只能完成已接受的邀请' })
 
     const upd = await pool.query(
-      `UPDATE invitations SET status = 'completed', responded_at = CURRENT_TIMESTAMP WHERE id = $1 RETURNING *`,
-      [inv.id]
+      `UPDATE invitations SET status = 'completed', responded_at = CURRENT_TIMESTAMP, mood = COALESCE($2, mood) WHERE id = $1 RETURNING *`,
+      [inv.id, mood || null]
     )
     res.json({ invitation: upd.rows[0] })
   } catch (e) {
     console.error(e)
     res.status(500).json({ error: '操作失败' })
+  }
+})
+
+// 写今日小记：完成后的约会上写一段感想（任一方都能写，后写覆盖）
+router.post('/:id/diary', authRequired, async (req, res) => {
+  const { diary } = req.body || {}
+  if (!diary || !diary.trim()) return res.status(400).json({ error: '写点什么吧' })
+  try {
+    const r = await pool.query('SELECT * FROM invitations WHERE id = $1', [req.params.id])
+    if (r.rows.length === 0) return res.status(404).json({ error: '邀请不存在' })
+    const inv = r.rows[0]
+    if (inv.couple_id !== req.user.couple_id) return res.status(403).json({ error: '无权操作' })
+    if (inv.status !== 'completed') return res.status(400).json({ error: '只能给已完成的约会写小记' })
+
+    const upd = await pool.query(
+      `UPDATE invitations SET diary = $2 WHERE id = $1 RETURNING *`, [inv.id, diary.trim()]
+    )
+    res.json({ invitation: upd.rows[0] })
+  } catch (e) {
+    console.error(e)
+    res.status(500).json({ error: '操作失败' })
+  }
+})
+
+// 回忆时间线：本情侣所有已完成的约会（含小记/心情），按时间正序
+router.get('/timeline', authRequired, async (req, res) => {
+  if (!req.user.couple_id) return res.json({ items: [] })
+  try {
+    const { rows } = await pool.query(`
+      SELECT i.id, i.title, i.type, i.meet_time, i.location, i.mood, i.diary,
+             i.responded_at,
+             fa.nickname AS from_nickname,
+             ta.nickname AS to_nickname
+      FROM invitations i
+      JOIN users fa ON fa.id = i.from_user_id
+      JOIN users ta ON ta.id = i.to_user_id
+      WHERE i.couple_id = $1 AND i.status = 'completed'
+      ORDER BY i.responded_at ASC
+    `, [req.user.couple_id])
+    res.json({ items: rows })
+  } catch (e) {
+    console.error(e)
+    res.status(500).json({ error: '查询失败' })
   }
 })
 

@@ -20,11 +20,17 @@ export default function Profile() {
   // 纪念日
   const [anniversary, setAnniversary] = useState('')
   const [anniMsg, setAnniMsg] = useState('')
+  // 我的生日
+  const [birthday, setBirthday] = useState('')
+  const [bdMsg, setBdMsg] = useState('')
 
   useEffect(() => {
     if (user?.couple_id) {
       api.getAnniversary()
         .then((d) => setAnniversary(d.anniversary ? String(d.anniversary).slice(0, 10) : ''))
+        .catch(() => {})
+      api.getBirthdays()
+        .then((d) => setBirthday(d.mine ? String(d.mine).slice(0, 10) : ''))
         .catch(() => {})
     }
   }, [user])
@@ -39,6 +45,17 @@ export default function Profile() {
       setAnniMsg('已保存 💕')
     } catch (e) {
       setAnniMsg(e.message)
+    }
+  }
+
+  async function saveBirthday() {
+    setBdMsg('')
+    if (!birthday) { setBdMsg('请选择日期'); return }
+    try {
+      await api.setBirthday(birthday)
+      setBdMsg('已保存 🎂')
+    } catch (e) {
+      setBdMsg(e.message)
     }
   }
 
@@ -100,6 +117,15 @@ export default function Profile() {
               onChange={(e) => setAnniversary(e.target.value)} />
             {anniMsg && <div className="success">{anniMsg}</div>}
             <button type="button" className="btn-primary" onClick={saveAnniversary}>保存纪念日</button>
+          </div>
+
+          <h2 className="section-title">🎂 我的生日</h2>
+          <div className="form anni-form">
+            <label>设置你的生日（首页会显示距下次生日还有几天）</label>
+            <input type="date" value={birthday}
+              onChange={(e) => setBirthday(e.target.value)} />
+            {bdMsg && <div className="success">{bdMsg}</div>}
+            <button type="button" className="btn-primary" onClick={saveBirthday}>保存生日</button>
           </div>
         </>
       )}

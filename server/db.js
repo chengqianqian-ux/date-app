@@ -60,6 +60,20 @@ const TABLES = [
   )`,
   // 已存在的 couples 表补加 anniversary 列（幂等）
   `ALTER TABLE couples ADD COLUMN IF NOT EXISTS anniversary DATE`,
+  // couples 补加双方生日（用于首页生日倒计时）
+  `ALTER TABLE couples ADD COLUMN IF NOT EXISTS birthday_a DATE`,
+  `ALTER TABLE couples ADD COLUMN IF NOT EXISTS birthday_b DATE`,
+  // invitations 补加心情 + 今日小记（完成约会后填写）
+  `ALTER TABLE invitations ADD COLUMN IF NOT EXISTS mood TEXT`,
+  `ALTER TABLE invitations ADD COLUMN IF NOT EXISTS diary TEXT`,
+  // 聊天消息表
+  `CREATE TABLE IF NOT EXISTS messages (
+    id SERIAL PRIMARY KEY,
+    couple_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    content TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`,
 ]
 
 async function init() {

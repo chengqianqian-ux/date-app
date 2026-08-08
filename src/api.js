@@ -41,13 +41,21 @@ export const api = {
   getAnniversary: () => request('/couples/anniversary'),
   setAnniversary: (anniversary) =>
     request('/couples/anniversary', { method: 'POST', body: { anniversary } }),
+  getBirthdays: () => request('/couples/birthdays'),
+  setBirthday: (birthday) =>
+    request('/couples/birthday', { method: 'POST', body: { birthday } }),
+  getQuote: () => request('/couples/quote'),
   listInvitations: () => request('/invitations'),
   createInvitation: (payload) => request('/invitations', { method: 'POST', body: payload }),
   respond: (id, action) => request(`/invitations/${id}/respond`, { method: 'POST', body: { action } }),
   cancel: (id) => request(`/invitations/${id}/cancel`, { method: 'POST' }),
-  complete: (id) => request(`/invitations/${id}/complete`, { method: 'POST' }),
+  complete: (id, mood) => request(`/invitations/${id}/complete`, { method: 'POST', body: { mood } }),
+  writeDiary: (id, diary) => request(`/invitations/${id}/diary`, { method: 'POST', body: { diary } }),
+  timeline: () => request('/invitations/timeline'),
   listWishlist: () => request('/wishlists'),
   addWishlist: (payload) => request('/wishlists', { method: 'POST', body: payload }),
   deleteWishlist: (id) => request(`/wishlists/${id}`, { method: 'DELETE' }),
   toggleWishlist: (id) => request(`/wishlists/${id}/toggle`, { method: 'POST' }),
+  listMessages: (after) => request('/messages' + (after ? `?after=${after}` : '')),
+  sendMessage: (content) => request('/messages', { method: 'POST', body: { content } }),
 }

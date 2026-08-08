@@ -111,4 +111,63 @@ router.post('/anniversary', authRequired, async (req, res) => {
   }
 })
 
+// 获取双方生日（mine = 我的，partner = 对方的，YYYY-MM-DD）
+router.get('/birthdays', authRequired, async (req, res) => {
+  if (!req.user.couple_id) return res.json({ mine: null, partner: null })
+  try {
+    const members = await pool.query(
+      'SELECT id FROM users WHERE couple_id = $1 ORDER BY id ASC', [req.user.couple_id]
+    )
+    const c = (await pool.query(
+      `SELECT to_char(birthday_a,'YYYY-MM-DD') AS ba,
+              to_char(birthday_b,'YYYY-MM-DD') AS bb FROM couples WHERE id = $1`,
+      [req.user.couple_id]
+    )).rows[0] || {}
+    const firstId = members.rows[0]?.id
+    const mineCol = firstId === req.user.id ? c.ba : c.bb
+    const partnerCol = firstId === req.user.id ? c.bb : c.ba
+    res.json({ mine: mineCol || null, partner: partnerCol || null })
+  } catch (e) {
+    console.error(e)
+    res.status(500).json({ error: '查询失败' })
+  }
+})
+
+// 设置我的生日
+router.post('/birthday', authRequired, async (req, res) => {
+  if (!req.user.couple_id) return res.status(400).json({ error: '请先完成配对' })
+  const { birthday } = req.body
+  if (!birthday) return res.status(400).json({ error: '请选择日期' })
+  try {
+    const members = await pool.query(
+      'SELECT id FROM users WHERE couple_id = $1 ORDER BY id ASC', [req.user.couple_id]
+    )
+    const col = members.rows[0]?.id === req.user.id ? 'birthday_a' : 'birthday_b'
+    await pool.query(`UPDATE couples SET ${col} = $1 WHERE id = $2`,
+      [birthday, req.user.couple_id])
+    res.json({ birthday })
+  } catch (e) {
+    console.error(e)
+    res.status(500).json({ error: '保存失败' })
+  }
+})
+
+// 每日情话（服务端内置池，按日期固定取一条，同一天两人看到一样的）
+const LOVE_QUOTES = [
+  '今天也是喜欢你的一天 💕', '愿有岁月可回首，且以深情共白头',
+  '你是我所有的不知所措，也是我所有的理所应当', '想和你一起，把日子过成诗',
+  '世间万物，唯有你是我疲惫生活的英雄梦想', '往后余生，风雪是你，平淡也是你',
+  '你笑起来真像好天气', '我见青山多妩媚，料青山见我应如是',
+  '愿你迷路一生，还是走到我身旁', '春风十里，不如你',
+  '我想和你一起生活，在某个小镇，共享无尽的黄昏', '你是我的半截诗，不讲究韵脚',
+  '所爱隔山海，山海皆可平', '我贪恋的人间烟火，不偏不倚恰好是你',
+  '你是我绕过山河错落，才找到的人间烟火',
+]
+router.get('/quote', authRequired, async (req, res) => {
+  // 按一年中的第几天取，保证当天稳定
+  const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000)
+  const q = LOVE_QUOTES[dayOfYear % LOVE_QUOTES.length]
+  res.json({ quote: q })
+})
+
 module.exports = router
