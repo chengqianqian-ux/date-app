@@ -29,25 +29,58 @@ body {
 
 .loading { text-align: center; padding: 60px; color: var(--text-light); }
 
-/* TopBar */
+/* TopBar（两行布局，移动端友好） */
 .topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 14px 20px;
-  background: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--border);
   position: sticky;
   top: 0;
   z-index: 10;
 }
-.topbar .logo { font-weight: 700; font-size: 18px; color: var(--pink); text-decoration: none; }
-.topbar .nav { display: flex; gap: 18px; }
-.topbar .nav a { color: var(--text-light); text-decoration: none; font-size: 15px; }
-.topbar .nav a.active { color: var(--pink); font-weight: 600; }
-.topbar .user-box { display: flex; align-items: center; gap: 10px; }
-.topbar .nickname { font-size: 14px; color: var(--text); }
+.topbar-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+}
+.topbar .logo { font-weight: 700; font-size: 17px; color: var(--pink); text-decoration: none; }
+.topbar .user-box { display: flex; align-items: center; gap: 8px; }
+.topbar .user-box .btn-ghost { font-size: 13px; padding: 6px 12px; }
+.topbar .nickname {
+  font-size: 14px; color: var(--text); text-decoration: none;
+  padding: 6px 10px; border-radius: 8px;
+}
+.topbar .nickname.active { color: var(--pink); font-weight: 600; background: var(--pink-bg); }
+
+/* 导航：等宽均分，文字居中 */
+.topbar .nav {
+  display: flex;
+  padding: 0 8px;
+  border-top: 1px solid var(--border);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.topbar .nav::-webkit-scrollbar { display: none; }
+.topbar .nav a {
+  flex: 1 1 0;
+  min-width: 56px;
+  text-align: center;
+  color: var(--text-light);
+  text-decoration: none;
+  font-size: 14px;
+  padding: 10px 4px;
+  white-space: nowrap;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+}
+.topbar .nav a.active {
+  color: var(--pink);
+  font-weight: 600;
+  border-bottom-color: var(--pink);
+}
+.topbar .nav a:active { background: var(--pink-bg); }
 
 /* Buttons */
 button {

@@ -22,21 +22,35 @@ function TopBar() {
   const { user, logout } = useAuth()
   const location = useLocation()
   if (!user) return null
+  const navs = user.couple_id
+    ? [
+        { to: '/home', label: '首页' },
+        { to: '/new', label: '发起' },
+        { to: '/wishlist', label: '心愿单' },
+        { to: '/chat', label: '聊天' },
+        { to: '/timeline', label: '回忆' },
+      ]
+    : [
+        { to: '/home', label: '首页' },
+        { to: '/new', label: '发起' },
+        { to: '/pair', label: '配对' },
+      ]
   return (
     <header className="topbar">
-      <Link to="/home" className="logo">💕 约会</Link>
-      <nav className="nav">
-        <Link to="/home" className={location.pathname === '/home' ? 'active' : ''}>首页</Link>
-        <Link to="/new" className={location.pathname === '/new' ? 'active' : ''}>发起邀请</Link>
-        {user.couple_id && <Link to="/wishlist" className={location.pathname === '/wishlist' ? 'active' : ''}>心愿单</Link>}
-        {user.couple_id && <Link to="/chat" className={location.pathname === '/chat' ? 'active' : ''}>聊天</Link>}
-        {user.couple_id && <Link to="/timeline" className={location.pathname === '/timeline' ? 'active' : ''}>回忆</Link>}
-        {!user.couple_id && <Link to="/pair">配对</Link>}
-      </nav>
-      <div className="user-box">
-        <Link to="/profile" className={location.pathname === '/profile' ? 'active nickname' : 'nickname'}>我的</Link>
-        <button onClick={logout} className="btn-ghost">退出</button>
+      <div className="topbar-top">
+        <Link to="/home" className="logo">💕 约会</Link>
+        <div className="user-box">
+          <Link to="/profile" className={location.pathname === '/profile' ? 'active nickname' : 'nickname'}>我的</Link>
+          <button onClick={logout} className="btn-ghost">退出</button>
+        </div>
       </div>
+      <nav className="nav">
+        {navs.map((n) => (
+          <Link key={n.to} to={n.to} className={location.pathname === n.to ? 'active' : ''}>
+            {n.label}
+          </Link>
+        ))}
+      </nav>
     </header>
   )
 }
