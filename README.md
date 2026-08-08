@@ -1,101 +1,173 @@
 # 💕 约会 · 两个人的小天地
 
-情侣约会邀请 Web App —— 男女朋友配对后可以互相发送约会邀请，对方可接受/婉拒/取消。
+> 一个情侣约会邀请 Web App：男女朋友配对后，可以互相发送约会邀请、维护心愿单、记录在一起的每一天。
 
-## 技术栈
-- 前端：React 18 + Vite + React Router
-- 后端：Node.js + Express + JWT
-- 数据库：PostgreSQL（本地开发可改用 Docker 起的 pg）
+在线 Demo：**https://haoyidechengzi.xyz** （已部署，绑定自有域名 + HTTPS，国内可直接访问）
+
+## 📷 功能截图
+
+<p align="center">
+  <img src="screenshots/home.png" width="280" alt="首页" />
+  <img src="screenshots/new.png" width="280" alt="发起邀请" />
+  <img src="screenshots/wishlist.png" width="280" alt="心愿单" />
+  <img src="screenshots/profile.png" width="280" alt="个人中心" />
+</p>
+
+> 左起：首页（纪念日倒计时 + 赴约统计 + 待回复红点）/ 发起邀请（表情贴纸）/ 心愿单 / 个人中心
 
 ---
 
-## 🚀 部署到 Render（让别人都能访问）
+## ✨ 功能特性
 
-部署后你会得到一个固定的 `https://你的应用名.onrender.com` 链接，任何人打开都能注册使用。
+| 模块 | 说明 |
+|---|---|
+| 👫 情侣配对 | 一方生成 6 位配对码，另一方输入码完成绑定，一对一关系 |
+| 💌 约会邀请 | 发起邀请（标题/类型/时间/地点/留言），对方可接受 / 婉拒 / 取消 |
+| ✓ 完成打卡 | 已接受的约会可标记"完成"，首页统计累计赴约次数 |
+| 📝 约会心愿单 | 把想一起做的事记下来，发邀请时一键选用，自动带出标题/类型/地点 |
+| 💞 纪念日倒计时 | 设置"在一起的日子"，首页实时显示「在一起第 N 天」+ 距下次约会倒计时 |
+| 🔔 状态提醒 | 收到待回复邀请时，Tab 上显示数字红点 |
+| 😘 表情贴纸 | 邀请留言支持一键插入可爱表情 |
+| 👤 个人中心 | 查看账号信息、修改密码、设置纪念日 |
+| 🔐 记住登录 | 登录页可勾选"记住账号密码"，下次自动填入 |
 
-### 准备：把代码推到 GitHub
-1. 在 GitHub 新建一个空仓库（如 `date-app`）
-2. 本地初始化并推送：
-   ```bash
-   cd date-app
-   git init
-   git add .
-   git commit -m "init: 约会 app"
-   git branch -M main
-   git remote add origin https://github.com/你的用户名/date-app.git
-   git push -u origin main
-   ```
+---
 
-### 在 Render 上部署（二选一）
+## 🛠 技术栈
 
-**方式 A：用蓝图文件（推荐，一键）**
+**前端**
+- React 18 + Vite 5（构建）
+- React Router 6（路由）
+- 原生 fetch + JWT（鉴权），localStorage 持久化登录态
 
-`render.yaml` 已经写好。在 Render 仪表盘：
-1. 点 **New +** → **Blueprint**
-2. 选你的 GitHub 仓库
-3. Render 会自动识别 `render.yaml`，创建一个 Postgres 数据库 + 一个 Web 服务
-4. 点 **Apply**，等构建完成（首次约 2-3 分钟）
+**后端**
+- Node.js + Express 4（RESTful API）
+- PostgreSQL（pg 驱动，连接池）
+- bcryptjs（密码哈希）+ jsonwebtoken（JWT 签发/校验）
 
-**方式 B：手动创建**
+**部署**
+- Vercel Serverless Functions（`api/index.js` 作为统一入口，`vercel.json` 把 `/api/*` 重写到该函数）
+- Supabase PostgreSQL（东京节点，pooler 连接）
+- 自有域名 `haoyidechengzi.xyz` + Vercel 自动 HTTPS
 
-1. **创建数据库**：New + → PostgreSQL → plan 选 free → 记下生成的 `Internal Database URL`
-2. **创建 Web 服务**：New + → Web Service → 选你的仓库
-   - Runtime: Node
-   - Build Command: `npm install && npm run build`
-   - Start Command: `npm start`
-   - 环境变量（Environment 标签页添加）：
-     | Key | Value |
-     |---|---|
-     | `DATABASE_URL` | （粘贴上一步 Postgres 的 Internal Connection String）|
-     | `JWT_SECRET` | 随便一串长字符，或点 Generate 生成 |
-     | `NODE_ENV` | `production` |
-3. 部署完成后，Render 给你一个 `https://xxx.onrender.com` 链接 —— 这就是发给别人用的链接！
+---
 
-### 验证部署成功
-```bash
-curl https://你的应用名.onrender.com/api/health
-# 返回 {"ok":true} 即成功
+## 📐 架构与设计要点
+
+### 前后端分离 + Serverless 统一入口
+- 前端打包成静态资源由 Vercel CDN 托管
+- 所有 `/api/*` 请求通过 `vercel.json` 的 rewrite 规则统一进入 `api/index.js`，再交给同一个 Express app 处理
+- **一套 Express 代码同时服务本地开发与 Serverless**：本地 `server/index.js` 直接 `app.listen`，线上 `api/index.js` 把 `(req, res)` 转发给同一个 `app`
+
+### 数据库幂等迁移
+- `server/db.js` 启动时执行建表 SQL，全部使用 `CREATE TABLE IF NOT EXISTS` + `ALTER TABLE ... ADD COLUMN IF NOT EXISTS`，保证增量字段（如 `anniversary`）在已部署的库上安全升级
+
+### 鉴权
+- 登录/注册成功签发 7 天有效期的 JWT，前端存 localStorage
+- `authRequired` 中间件解析 token 并回查数据库，确保用户真实存在且信息最新
+
+### 时区处理
+- 纪念日字段为 `DATE` 类型，用 `to_char(anniversary, 'YYYY-MM-DD')` 在 SQL 层格式化返回，避免 pg 驱动返回 UTC 时间戳导致的前端日期偏移一天
+
+### 数据模型
+
 ```
-然后浏览器打开链接，注册两个账号走完配对 + 发邀请流程。
+users        id, username(唯一), password_hash, nickname, couple_id, created_at
+couples      id, pair_code(唯一), anniversary, created_at
+invitations  id, couple_id, from_user_id, to_user_id, title, type,
+             meet_time, location, note, status, created_at, responded_at
+wishlists    id, couple_id, user_id, title, type, location, note, done, created_at
+```
 
-### 注意事项
-- Render 免费版服务 15 分钟无请求会休眠，首次唤醒约 30-50 秒（会显示加载），日常使用无影响
-- 免费版 Postgres 90 天后到期，到期前会邮件提醒；长期用建议升级 starter（$5/月）
-- 数据存在 Postgres，服务重启不会丢
+`invitations.status`：`pending` → `accepted`/`rejected`/`cancelled` → `completed`
 
 ---
 
-## 💻 本地开发
+## 📂 目录结构
 
-### 方式 1：用 Docker 起 Postgres（推荐，装了 Docker Desktop 用这个）
+```
+date-app/
+├── api/
+│   └── index.js            # Vercel Serverless 入口，转发请求给 Express
+├── server/
+│   ├── app.js              # 纯 Express app（本地 + Serverless 共用）
+│   ├── index.js            # 本地开发入口（启动 HTTP 服务 + 建表）
+│   ├── db.js               # pg 连接池 + 幂等建表
+│   ├── auth.js             # JWT 签发 + authRequired 中间件
+│   └── routes/
+│       ├── auth.js         # 注册/登录/me/改密码
+│       ├── couples.js      # 配对/另一半/纪念日
+│       ├── invitations.js  # 邀请 CRUD + 接受/取消/完成
+│       └── wishlists.js    # 心愿单 CRUD
+├── src/
+│   ├── App.jsx             # 路由 + 顶栏布局
+│   ├── api.js              # 前端请求封装
+│   ├── context/AuthContext.jsx  # 登录态 Context
+│   ├── pages/              # Login/Register/Pairing/Home/NewInvitation/Wishlist/Profile
+│   └── styles.css
+├── vercel.json             # /api/* rewrite + 构建配置
+└── package.json
+```
+
+---
+
+## 🚀 本地运行
+
 ```bash
-docker compose up -d          # 起本地 postgres
-cp .env.example .env          # 生成环境变量
+# 1. 安装依赖
 npm install
-npm run dev                   # 同时起前端 5173 + 后端 3001
+
+# 2. 配置环境变量
+cp .env.example .env
+# 编辑 .env，填入你的 DATABASE_URL 和 JWT_SECRET
+
+# 3. 启动（同时起前端 5173 + 后端 3001）
+npm run dev
 ```
+
 浏览器打开 http://localhost:5173
 
-### 方式 2：直接连 Render 的 Postgres（不用本地装数据库）
-在项目根目录建 `.env`，`DATABASE_URL` 填 Render Postgres 的**外部连接串**（External Database URL）：
-```
-DATABASE_URL=postgres://user:pass@xxx.render.com/dbname
-PGSSL=1
-JWT_SECRET=local-dev-secret
-```
-然后 `npm run dev`，本地代码改的是云端数据库（开发期可接受）。
+> 本地若无 PostgreSQL，可用 `docker compose up -d` 起一个（见 `docker-compose.yml`）。
 
 ---
 
-## 体验流程
-1. 浏览器开两个窗口（一个普通 + 一个无痕），分别注册账号 A、B
-2. A 在「配对」页生成 6 位配对码，把码告诉 B
-3. B 在「配对」页输入码 → 绑定成功
-4. A 在「发起邀请」发送约会（标题/类型/时间/地点/留言）
-5. B 在「收到的」列表看到 → 接受/婉拒
-6. A 在「发出的」列表看到状态变化；pending 状态下 A 可取消
+## 📡 API 概览
 
-## API 概览
-- `POST /api/auth/register` `POST /api/auth/login` `GET /api/auth/me`
-- `POST /api/couples/code` `POST /api/couples/pair` `GET /api/couples/partner`
-- `GET /api/invitations` `POST /api/invitations` `POST /api/invitations/:id/respond` `POST /api/invitations/:id/cancel`
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| POST | `/api/auth/register` | 注册 |
+| POST | `/api/auth/login` | 登录 |
+| GET  | `/api/auth/me` | 当前用户信息 |
+| POST | `/api/auth/change-password` | 修改密码 |
+| POST | `/api/couples/code` | 生成配对码 |
+| POST | `/api/couples/pair` | 用配对码绑定 |
+| GET  | `/api/couples/partner` | 获取另一半 |
+| GET/POST | `/api/couples/anniversary` | 读取/设置纪念日 |
+| GET  | `/api/invitations` | 邀请列表 + 完成统计 |
+| POST | `/api/invitations` | 创建邀请 |
+| POST | `/api/invitations/:id/respond` | 接受/婉拒 |
+| POST | `/api/invitations/:id/cancel` | 取消邀请 |
+| POST | `/api/invitations/:id/complete` | 完成打卡 |
+| GET  | `/api/wishlists` | 心愿单列表 |
+| POST | `/api/wishlists` | 添加心愿 |
+| DELETE | `/api/wishlists/:id` | 删除心愿 |
+| POST | `/api/wishlists/:id/toggle` | 切换完成状态 |
+
+所有需登录的接口通过 `Authorization: Bearer <token>` 携带 JWT。
+
+---
+
+## 📝 体验流程
+
+1. 注册两个账号（A 和 B，可开两个浏览器窗口）
+2. A 在「配对」页生成 6 位配对码，告诉 B
+3. B 在「配对」页输入码 → 绑定成功
+4. A 在「发起邀请」发送约会邀请
+5. B 在「收到的」列表接受 → 双方都能点「完成打卡」
+6. 在「我的」页设置在一起的纪念日，首页实时显示在一起第几天
+
+---
+
+## 📄 License
+
+MIT
