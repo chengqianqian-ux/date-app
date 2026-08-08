@@ -30,6 +30,7 @@ const TABLES = [
   `CREATE TABLE IF NOT EXISTS couples (
     id SERIAL PRIMARY KEY,
     pair_code TEXT UNIQUE NOT NULL,
+    anniversary DATE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
   )`,
   `CREATE TABLE IF NOT EXISTS invitations (
@@ -46,6 +47,19 @@ const TABLES = [
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     responded_at TIMESTAMPTZ
   )`,
+  `CREATE TABLE IF NOT EXISTS wishlists (
+    id SERIAL PRIMARY KEY,
+    couple_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    type TEXT,
+    location TEXT,
+    note TEXT,
+    done BOOLEAN NOT NULL DEFAULT false,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`,
+  // 已存在的 couples 表补加 anniversary 列（幂等）
+  `ALTER TABLE couples ADD COLUMN IF NOT EXISTS anniversary DATE`,
 ]
 
 async function init() {

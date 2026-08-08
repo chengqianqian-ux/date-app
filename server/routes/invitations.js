@@ -4,9 +4,9 @@ const { authRequired } = require('../auth')
 
 const router = express.Router()
 
-// 列表：收到的 + 发出的
+// 列表：收到的 + 发出的 + 完成统计
 router.get('/', authRequired, async (req, res) => {
-  if (!req.user.couple_id) return res.json({ received: [], sent: [] })
+  if (!req.user.couple_id) return res.json({ received: [], sent: [], completedCount: 0 })
   try {
     const received = await pool.query(`
       SELECT i.*, u.nickname AS from_nickname
@@ -18,7 +18,16 @@ router.get('/', authRequired, async (req, res) => {
       FROM invitations i JOIN users u ON u.id = i.to_user_id
       WHERE i.from_user_id = $1 ORDER BY i.created_at DESC
     `, [req.user.id])
-    res.json({ received: received.rows, sent: sent.rows })
+    // 这对情侣累计完成的约会次数
+    const c = await pool.query(
+      `SELECT COUNT(*)::int AS n FROM invitations WHERE couple_id = $1 AND status = 'completed'`,
+      [req.user.couple_id]
+    )
+    res.json({
+      received: received.rows,
+      sent: sent.rows,
+      completedCount: c.rows[0]?.n || 0,
+    })
   } catch (e) {
     console.error(e)
     res.status(500).json({ error: '查询失败' })
@@ -85,6 +94,26 @@ router.post('/:id/cancel', authRequired, async (req, res) => {
 
     const upd = await pool.query(
       `UPDATE invitations SET status = 'cancelled', responded_at = CURRENT_TIMESTAMP WHERE id = $1 RETURNING *`,
+      [inv.id]
+    )
+    res.json({ invitation: upd.rows[0] })
+  } catch (e) {
+    console.error(e)
+    res.status(500).json({ error: '操作失败' })
+  }
+})
+
+// 完成打卡：已接受的邀请，任一方都能标记完成
+router.post('/:id/complete', authRequired, async (req, res) => {
+  try {
+    const r = await pool.query('SELECT * FROM invitations WHERE id = $1', [req.params.id])
+    if (r.rows.length === 0) return res.status(404).json({ error: '邀请不存在' })
+    const inv = r.rows[0]
+    if (inv.couple_id !== req.user.couple_id) return res.status(403).json({ error: '无权操作' })
+    if (inv.status !== 'accepted') return res.status(400).json({ error: '只能完成已接受的邀请' })
+
+    const upd = await pool.query(
+      `UPDATE invitations SET status = 'completed', responded_at = CURRENT_TIMESTAMP WHERE id = $1 RETURNING *`,
       [inv.id]
     )
     res.json({ invitation: upd.rows[0] })

@@ -1,21 +1,37 @@
 import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { api } from '../api'
 import { useAuth } from '../context/AuthContext'
 
 const TYPES = ['吃饭', '看电影', '散步', '咖啡', '旅行', '其他']
 const TYPE_EMOJI = { '吃饭': '🍜', '看电影': '🎬', '散步': '🚶', '咖啡': '☕', '旅行': '✈️', '其他': '🎀' }
 
+// 留言可快速插入的可爱表情
+const STICKERS = ['💕', '💖', '😘', '🥰', '🌹', '🍫', '✨', '🥳', '答应我嘛', '想见你', '等你哦']
+
 export default function NewInvitation() {
   const { user } = useAuth()
   const nav = useNavigate()
+  const location = useLocation()
+
+  // 从心愿单一键选用：带过来预填表单
+  const fromWish = location.state?.fromWishlist
+
   const [form, setForm] = useState({
-    title: '', type: '吃饭', meet_time: '', location: '', note: '',
+    title: fromWish?.title || '',
+    type: fromWish?.type || '吃饭',
+    meet_time: '',
+    location: fromWish?.location || '',
+    note: fromWish?.note || '',
   })
   const [err, setErr] = useState('')
   const [loading, setLoading] = useState(false)
 
   function set(k, v) { setForm({ ...form, [k]: v }) }
+
+  function addSticker(s) {
+    set('note', (form.note ? form.note + ' ' : '') + s)
+  }
 
   async function submit(e) {
     e.preventDefault()
@@ -23,7 +39,6 @@ export default function NewInvitation() {
     if (!form.title.trim()) { setErr('给约会起个标题吧'); return }
     setLoading(true)
     try {
-      // meet_time 转 SQLite 友好格式：datetime-local 是 "YYYY-MM-DDTHH:MM"
       await api.createInvitation({
         ...form,
         meet_time: form.meet_time || null,
@@ -48,6 +63,7 @@ export default function NewInvitation() {
   return (
     <div className="new-inv">
       <h1>💌 发起约会邀请</h1>
+      {fromWish && <div className="success">从心愿单选用：{fromWish.title}</div>}
       <form onSubmit={submit} className="form">
         <label>标题</label>
         <input value={form.title} onChange={(e) => set('title', e.target.value)}
@@ -75,6 +91,12 @@ export default function NewInvitation() {
         <label>想说的话</label>
         <textarea value={form.note} onChange={(e) => set('note', e.target.value)}
           placeholder="留个言吧～" rows={3} />
+        <div className="sticker-picker">
+          {STICKERS.map((s) => (
+            <button type="button" key={s} className="sticker"
+              onClick={() => addSticker(s)}>{s}</button>
+          ))}
+        </div>
 
         {err && <div className="error">{err}</div>}
         <button type="submit" className="btn-primary" disabled={loading}>

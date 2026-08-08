@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../api'
 import { useAuth } from '../context/AuthContext'
@@ -17,7 +17,30 @@ export default function Profile() {
   const [ok, setOk] = useState('')
   const [loading, setLoading] = useState(false)
 
+  // 纪念日
+  const [anniversary, setAnniversary] = useState('')
+  const [anniMsg, setAnniMsg] = useState('')
+
+  useEffect(() => {
+    if (user?.couple_id) {
+      api.getAnniversary()
+        .then((d) => setAnniversary(d.anniversary ? String(d.anniversary).slice(0, 10) : ''))
+        .catch(() => {})
+    }
+  }, [user])
+
   function set(k, v) { setPwd({ ...pwd, [k]: v }); setOk('') }
+
+  async function saveAnniversary() {
+    setAnniMsg('')
+    if (!anniversary) { setAnniMsg('请选择日期'); return }
+    try {
+      await api.setAnniversary(anniversary)
+      setAnniMsg('已保存 💕')
+    } catch (e) {
+      setAnniMsg(e.message)
+    }
+  }
 
   async function changePassword(e) {
     e.preventDefault()
@@ -67,6 +90,19 @@ export default function Profile() {
           <span className="info-value">{fmtDate(user.created_at)}</span>
         </div>
       </div>
+
+      {user.couple_id && (
+        <>
+          <h2 className="section-title">💞 在一起的日子</h2>
+          <div className="form anni-form">
+            <label>你们在一起的纪念日（首页会显示在一起第几天）</label>
+            <input type="date" value={anniversary}
+              onChange={(e) => setAnniversary(e.target.value)} />
+            {anniMsg && <div className="success">{anniMsg}</div>}
+            <button type="button" className="btn-primary" onClick={saveAnniversary}>保存纪念日</button>
+          </div>
+        </>
+      )}
 
       <h2 className="section-title">🔒 修改密码</h2>
       <form onSubmit={changePassword} className="form">

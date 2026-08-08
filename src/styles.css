@@ -273,6 +273,14 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 .form .btn-primary { margin-top: 20px; }
 
+/* 登录页"记住我"勾选框 */
+.remember-box {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 14px; color: var(--text-light);
+  margin-top: 4px; cursor: pointer; user-select: none;
+}
+.remember-box input { width: 16px; height: 16px; accent-color: var(--pink); cursor: pointer; }
+
 /* 顶栏“我的”入口 */
 .topbar .nickname { font-size: 14px; color: var(--text); text-decoration: none; }
 .topbar .nickname.active { color: var(--pink); font-weight: 600; }
@@ -313,4 +321,76 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   border-radius: 10px; font-size: 14px; margin-top: 12px;
 }
 .logout-btn { width: 100%; margin-top: 24px; color: var(--text-light); }
+
+/* 纪念日表单 */
+.anni-form label { display: block; }
+.anni-form .btn-primary { margin-top: 14px; }
+
+/* 首页顶部横幅 */
+.banner {
+  background: linear-gradient(135deg, var(--pink), var(--warm));
+  color: white;
+  border-radius: 18px;
+  padding: 16px 18px;
+  margin-bottom: 18px;
+  box-shadow: var(--shadow);
+  text-align: center;
+  font-size: 15px;
+  line-height: 1.9;
+}
+.banner b { font-size: 20px; margin: 0 2px; }
+.banner-row { font-weight: 500; }
+.banner-soft { font-size: 13px; opacity: 0.92; }
+.banner-set {
+  background: rgba(255,255,255,0.25); color: white; border: none;
+  padding: 8px 16px; border-radius: 20px; font-size: 14px; cursor: pointer;
+}
+
+/* 收到邀请红点 */
+.red-dot {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 18px; height: 18px; margin-left: 6px;
+  background: #ff4d6d; color: white; font-size: 11px; font-weight: 700;
+  border-radius: 10px; padding: 0 5px;
+}
+
+/* 完成打卡按钮 */
+.btn-complete {
+  background: linear-gradient(135deg, var(--green), #5db478);
+  color: white; font-weight: 600;
+}
+
+/* 心愿单 */
+.wishlist h1 { color: var(--pink); text-align: center; margin-bottom: 6px; }
+.wishlist .subtitle { text-align: center; color: var(--text-light); font-size: 13px; margin-bottom: 20px; }
+.wish-list { margin-top: 22px; display: flex; flex-direction: column; gap: 12px; }
+.wish-card {
+  background: white; border-radius: 16px; padding: 16px;
+  box-shadow: var(--shadow);
+}
+.wish-card.done { opacity: 0.6; }
+.wish-card.done .wish-title { text-decoration: line-through; }
+.wish-head { display: flex; gap: 12px; align-items: flex-start; }
+.wish-title-wrap { flex: 1; }
+.wish-title { font-weight: 600; font-size: 16px; }
+.wish-actions { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+.btn-use {
+  background: linear-gradient(135deg, var(--pink), var(--warm));
+  color: white; font-weight: 600; font-size: 14px; padding: 8px 14px;
+}
+.btn-del {
+  background: none; color: #c08a98; font-size: 14px; padding: 8px 12px;
+}
+
+/* 表情贴纸选择器 */
+.sticker-picker {
+  display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;
+}
+.sticker {
+  background: var(--pink-bg); color: var(--text);
+  border: none; padding: 6px 12px; border-radius: 16px;
+  font-size: 14px; cursor: pointer;
+}
+.sticker:hover { background: var(--pink-soft); }
+
 

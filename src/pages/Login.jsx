@@ -3,11 +3,20 @@ import { Link, useNavigate } from 'react-router-dom'
 import { api } from '../api'
 import { useAuth } from '../context/AuthContext'
 
+const REMEMBER_KEY = 'date_app_remember'
+
 export default function Login() {
   const { login } = useAuth()
   const nav = useNavigate()
-  const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
+
+  // 进登录页时，从本地读取上次记住的账号密码（默认勾选"记住我"）
+  const saved = (() => {
+    try { return JSON.parse(localStorage.getItem(REMEMBER_KEY) || 'null') } catch { return null }
+  })()
+
+  const [username, setUsername] = useState(saved?.username || '')
+  const [password, setPassword] = useState(saved?.password || '')
+  const [remember, setRemember] = useState(!!saved)
   const [err, setErr] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -17,6 +26,12 @@ export default function Login() {
     setLoading(true)
     try {
       const d = await api.login(username, password)
+      // 登录成功后再记住账号密码，避免记住错的
+      if (remember) {
+        localStorage.setItem(REMEMBER_KEY, JSON.stringify({ username, password }))
+      } else {
+        localStorage.removeItem(REMEMBER_KEY)
+      }
       login(d.token, d.user)
       nav('/home')
     } catch (e) {
@@ -35,6 +50,11 @@ export default function Login() {
           placeholder="用户名" autoComplete="username" />
         <input value={password} onChange={(e) => setPassword(e.target.value)}
           type="password" placeholder="密码" autoComplete="current-password" />
+        <label className="remember-box">
+          <input type="checkbox" checked={remember}
+            onChange={(e) => setRemember(e.target.checked)} />
+          <span>记住账号密码</span>
+        </label>
         {err && <div className="error">{err}</div>}
         <button type="submit" className="btn-primary" disabled={loading}>
           {loading ? '登录中…' : '登录'}

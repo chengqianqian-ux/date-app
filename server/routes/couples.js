@@ -82,4 +82,33 @@ router.get('/partner', authRequired, async (req, res) => {
   }
 })
 
+// 获取纪念日（在一起的日子）—— 用 to_char 直接返回 YYYY-MM-DD，避开时区偏移
+router.get('/anniversary', authRequired, async (req, res) => {
+  if (!req.user.couple_id) return res.json({ anniversary: null })
+  try {
+    const { rows } = await pool.query(
+      `SELECT to_char(anniversary, 'YYYY-MM-DD') AS anniversary FROM couples WHERE id = $1`,
+      [req.user.couple_id]
+    )
+    res.json({ anniversary: rows[0]?.anniversary || null })
+  } catch (e) {
+    res.status(500).json({ error: '查询失败' })
+  }
+})
+
+// 设置纪念日（任一方都能设）
+router.post('/anniversary', authRequired, async (req, res) => {
+  if (!req.user.couple_id) return res.status(400).json({ error: '请先完成配对' })
+  const { anniversary } = req.body
+  if (!anniversary) return res.status(400).json({ error: '请选择日期' })
+  try {
+    await pool.query('UPDATE couples SET anniversary = $1 WHERE id = $2',
+      [anniversary, req.user.couple_id])
+    res.json({ anniversary })
+  } catch (e) {
+    console.error(e)
+    res.status(500).json({ error: '保存失败' })
+  }
+})
+
 module.exports = router

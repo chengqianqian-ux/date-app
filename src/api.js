@@ -38,8 +38,16 @@ export const api = {
   genPairCode: () => request('/couples/code', { method: 'POST' }),
   pair: (pair_code) => request('/couples/pair', { method: 'POST', body: { pair_code } }),
   partner: () => request('/couples/partner'),
+  getAnniversary: () => request('/couples/anniversary'),
+  setAnniversary: (anniversary) =>
+    request('/couples/anniversary', { method: 'POST', body: { anniversary } }),
   listInvitations: () => request('/invitations'),
   createInvitation: (payload) => request('/invitations', { method: 'POST', body: payload }),
   respond: (id, action) => request(`/invitations/${id}/respond`, { method: 'POST', body: { action } }),
   cancel: (id) => request(`/invitations/${id}/cancel`, { method: 'POST' }),
+  complete: (id) => request(`/invitations/${id}/complete`, { method: 'POST' }),
+  listWishlist: () => request('/wishlists'),
+  addWishlist: (payload) => request('/wishlists', { method: 'POST', body: payload }),
+  deleteWishlist: (id) => request(`/wishlists/${id}`, { method: 'DELETE' }),
+  toggleWishlist: (id) => request(`/wishlists/${id}/toggle`, { method: 'POST' }),
 }

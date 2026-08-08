@@ -7,6 +7,7 @@ import Pairing from './pages/Pairing'
 import Home from './pages/Home'
 import NewInvitation from './pages/NewInvitation'
 import Profile from './pages/Profile'
+import Wishlist from './pages/Wishlist'
 
 function RequireAuth({ children }) {
   const { user, loading } = useAuth()
@@ -25,6 +26,7 @@ function TopBar() {
       <nav className="nav">
         <Link to="/home" className={location.pathname === '/home' ? 'active' : ''}>首页</Link>
         <Link to="/new" className={location.pathname === '/new' ? 'active' : ''}>发起邀请</Link>
+        {user.couple_id && <Link to="/wishlist" className={location.pathname === '/wishlist' ? 'active' : ''}>心愿单</Link>}
         {!user.couple_id && <Link to="/pair">配对</Link>}
       </nav>
       <div className="user-box">
@@ -47,6 +49,7 @@ export default function App() {
           <Route path="/pair" element={<RequireAuth><Pairing /></RequireAuth>} />
           <Route path="/home" element={<RequireAuth><Home /></RequireAuth>} />
           <Route path="/new" element={<RequireAuth><NewInvitation /></RequireAuth>} />
+          <Route path="/wishlist" element={<RequireAuth><Wishlist /></RequireAuth>} />
           <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
           <Route path="*" element={<Navigate to={user ? '/home' : '/login'} replace />} />
         </Routes>

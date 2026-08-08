@@ -8,7 +8,7 @@ const TYPE_EMOJI = {
 }
 
 const STATUS_LABEL = {
-  pending: '待回复', accepted: '已接受', rejected: '已拒绝', cancelled: '已取消',
+  pending: '待回复', accepted: '已接受', rejected: '已拒绝', cancelled: '已取消', completed: '已完成',
 }
 
 function fmtTime(t) {
@@ -16,7 +16,25 @@ function fmtTime(t) {
   return t.replace('T', ' ').slice(0, 16)
 }
 
+// 计算距今还有几天（负数=已过去）
+function daysUntil(t) {
+  if (!t) return null
+  const target = new Date(t.replace(' ', 'T'))
+  if (isNaN(target)) return null
+  const now = new Date()
+  return Math.ceil((target - now) / (1000 * 60 * 60 * 24))
+}
+
+// 在一起第几天
+function daysTogether(anniversary) {
+  if (!anniversary) return null
+  const start = new Date(anniversary)
+  if (isNaN(start)) return null
+  return Math.floor((new Date() - start) / (1000 * 60 * 60 * 24)) + 1
+}
+
 function InvitationCard({ inv, received, onAction }) {
+  const canComplete = inv.status === 'accepted'
   return (
     <div className={`inv-card status-${inv.status}`}>
       <div className="inv-head">
@@ -46,6 +64,11 @@ function InvitationCard({ inv, received, onAction }) {
           <button className="btn-ghost" onClick={() => onAction(inv.id, 'cancel')}>取消邀请</button>
         </div>
       )}
+      {canComplete && (
+        <div className="inv-actions">
+          <button className="btn-complete" onClick={() => onAction(inv.id, 'complete')}>✓ 打卡完成</button>
+        </div>
+      )}
     </div>
   )
 }
@@ -54,13 +77,15 @@ export default function Home() {
   const { user } = useAuth()
   const nav = useNavigate()
   const [tab, setTab] = useState('received')
-  const [data, setData] = useState({ received: [], sent: [] })
+  const [data, setData] = useState({ received: [], sent: [], completedCount: 0 })
+  const [anniversary, setAnniversary] = useState(null)
   const [err, setErr] = useState('')
 
   async function load() {
     try {
-      const d = await api.listInvitations()
+      const [d, a] = await Promise.all([api.listInvitations(), api.getAnniversary()])
       setData(d)
+      setAnniversary(a.anniversary)
     } catch (e) {
       setErr(e.message)
     }
@@ -72,6 +97,7 @@ export default function Home() {
     setErr('')
     try {
       if (action === 'cancel') await api.cancel(id)
+      else if (action === 'complete') await api.complete(id)
       else await api.respond(id, action)
       await load()
     } catch (e) {
@@ -91,12 +117,41 @@ export default function Home() {
   }
 
   const list = tab === 'received' ? data.received : data.sent
+  const pendingReceived = data.received.filter((i) => i.status === 'pending').length
+
+  // 找下一个即将到来的已接受约会
+  const upcoming = [...data.received, ...data.sent]
+    .filter((i) => i.status === 'accepted' && daysUntil(i.meet_time) !== null && daysUntil(i.meet_time) >= 0)
+    .sort((a, b) => daysUntil(a.meet_time) - daysUntil(b.meet_time))[0]
+  const upDays = upcoming ? daysUntil(upcoming.meet_time) : null
+
+  const together = daysTogether(anniversary)
 
   return (
     <div className="home">
+      {/* 纪念日 + 倒计时横幅 */}
+      <div className="banner">
+        {together ? (
+          <div className="banner-row">💞 在一起第 <b>{together}</b> 天</div>
+        ) : (
+          <button className="banner-set" onClick={() => nav('/profile')}>设置在一起的日子 →</button>
+        )}
+        {upDays !== null && (
+          <div className="banner-row">
+            {upDays === 0
+              ? `🎉 今天有约会：${upcoming.title}`
+              : `⏰ 距「${upcoming.title}」还有 ${upDays} 天`}
+          </div>
+        )}
+        {data.completedCount > 0 && (
+          <div className="banner-row banner-soft">🌸 我们已经一起赴约 {data.completedCount} 次啦</div>
+        )}
+      </div>
+
       <div className="tabs">
         <button className={tab === 'received' ? 'active' : ''} onClick={() => setTab('received')}>
           收到的 ({data.received.length})
+          {pendingReceived > 0 && <span className="red-dot">{pendingReceived}</span>}
         </button>
         <button className={tab === 'sent' ? 'active' : ''} onClick={() => setTab('sent')}>
           发出的 ({data.sent.length})

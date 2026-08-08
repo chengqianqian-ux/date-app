@@ -5,6 +5,7 @@ const fs = require('fs')
 const authRoutes = require('./routes/auth')
 const coupleRoutes = require('./routes/couples')
 const invitationRoutes = require('./routes/invitations')
+const wishlistRoutes = require('./routes/wishlists')
 
 const app = express()
 app.use(express.json())
@@ -13,6 +14,7 @@ app.get('/api/health', (req, res) => res.json({ ok: true }))
 app.use('/api/auth', authRoutes)
 app.use('/api/couples', coupleRoutes)
 app.use('/api/invitations', invitationRoutes)
+app.use('/api/wishlists', wishlistRoutes)
 
 // 生产模式：托管 Vite 打包的静态文件（仅在本地开发时，Vercel 会自动处理前端）
 const distDir = path.join(__dirname, '..', 'dist')
