@@ -6,6 +6,7 @@ import Register from './pages/Register'
 import Pairing from './pages/Pairing'
 import Home from './pages/Home'
 import NewInvitation from './pages/NewInvitation'
+import Profile from './pages/Profile'
 
 function RequireAuth({ children }) {
   const { user, loading } = useAuth()
@@ -27,7 +28,7 @@ function TopBar() {
         {!user.couple_id && <Link to="/pair">配对</Link>}
       </nav>
       <div className="user-box">
-        <span className="nickname">{user.nickname}</span>
+        <Link to="/profile" className={location.pathname === '/profile' ? 'active nickname' : 'nickname'}>我的</Link>
         <button onClick={logout} className="btn-ghost">退出</button>
       </div>
     </header>
@@ -46,6 +47,7 @@ export default function App() {
           <Route path="/pair" element={<RequireAuth><Pairing /></RequireAuth>} />
           <Route path="/home" element={<RequireAuth><Home /></RequireAuth>} />
           <Route path="/new" element={<RequireAuth><NewInvitation /></RequireAuth>} />
+          <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
           <Route path="*" element={<Navigate to={user ? '/home' : '/login'} replace />} />
         </Routes>
       </main>

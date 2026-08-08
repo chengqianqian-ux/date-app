@@ -57,9 +57,43 @@ router.post('/login', async (req, res) => {
   }
 })
 
-// 当前用户
-router.get('/me', authRequired, (req, res) => {
-  res.json({ user: req.user })
+// 当前用户（附带注册时间，用于个人中心展示）
+router.get('/me', authRequired, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      'SELECT id, username, nickname, couple_id, created_at FROM users WHERE id = $1',
+      [req.user.id]
+    )
+    if (rows.length === 0) return res.status(401).json({ error: '用户不存在' })
+    res.json({ user: rows[0] })
+  } catch (e) {
+    console.error(e)
+    res.status(500).json({ error: '查询失败' })
+  }
+})
+
+// 修改密码（验证旧密码后写入新密码）
+router.post('/change-password', authRequired, async (req, res) => {
+  const { oldPassword, newPassword } = req.body
+  if (!oldPassword || !newPassword) {
+    return res.status(400).json({ error: '请输入旧密码和新密码' })
+  }
+  if (newPassword.length < 6) {
+    return res.status(400).json({ error: '新密码至少 6 位' })
+  }
+  try {
+    const { rows } = await pool.query('SELECT password_hash FROM users WHERE id = $1', [req.user.id])
+    if (rows.length === 0) return res.status(401).json({ error: '用户不存在' })
+    if (!bcrypt.compareSync(oldPassword, rows[0].password_hash)) {
+      return res.status(400).json({ error: '旧密码不正确' })
+    }
+    const newHash = bcrypt.hashSync(newPassword, 10)
+    await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [newHash, req.user.id])
+    res.json({ ok: true })
+  } catch (e) {
+    console.error(e)
+    res.status(500).json({ error: '修改失败' })
+  }
 })
 
 module.exports = router

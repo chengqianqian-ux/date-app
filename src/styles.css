@@ -272,3 +272,45 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   font-weight: 600;
 }
 .form .btn-primary { margin-top: 20px; }
+
+/* 顶栏“我的”入口 */
+.topbar .nickname { font-size: 14px; color: var(--text); text-decoration: none; }
+.topbar .nickname.active { color: var(--pink); font-weight: 600; }
+.link-btn {
+  background: none; border: none; color: var(--pink);
+  font-size: 13px; padding: 0 0 0 8px; text-decoration: underline;
+}
+
+/* 个人中心 */
+.profile { text-align: center; padding: 8px 0 20px; }
+.profile .avatar {
+  width: 84px; height: 84px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--pink-soft), var(--pink-bg));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 40px; margin: 0 auto 12px;
+  box-shadow: var(--shadow);
+}
+.profile-name { font-size: 22px; font-weight: 700; color: var(--text); margin-bottom: 20px; }
+
+.info-card {
+  background: white; border-radius: 16px; padding: 6px 18px;
+  box-shadow: var(--shadow); text-align: left; margin-bottom: 24px;
+}
+.info-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 0; border-bottom: 1px solid var(--border);
+}
+.info-row:last-child { border-bottom: none; }
+.info-label { color: var(--text-light); font-size: 14px; }
+.info-value { color: var(--text); font-size: 15px; font-weight: 500; }
+
+.section-title {
+  font-size: 16px; color: var(--text); text-align: left;
+  margin: 0 0 12px;
+}
+.success {
+  background: #e8f7ed; color: var(--green); padding: 10px 14px;
+  border-radius: 10px; font-size: 14px; margin-top: 12px;
+}
+.logout-btn { width: 100%; margin-top: 24px; color: var(--text-light); }
+

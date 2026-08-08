@@ -33,6 +33,8 @@ export const api = {
   login: (username, password) =>
     request('/auth/login', { method: 'POST', body: { username, password } }),
   me: () => request('/auth/me'),
+  changePassword: (oldPassword, newPassword) =>
+    request('/auth/change-password', { method: 'POST', body: { oldPassword, newPassword } }),
   genPairCode: () => request('/couples/code', { method: 'POST' }),
   pair: (pair_code) => request('/couples/pair', { method: 'POST', body: { pair_code } }),
   partner: () => request('/couples/partner'),
