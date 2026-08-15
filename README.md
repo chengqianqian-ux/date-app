@@ -1,19 +1,20 @@
-# 💕 约会 · 两个人的小天地
+# 💕 双人日记 · Twin Diary
 
-> 一个情侣约会邀请 Web App：男女朋友配对后，可以互相发送约会邀请、维护心愿单、记录在一起的每一天。
+> 一个情侣约会与心愿管理 Web App：男女朋友配对后，可以互相发送约会邀请、维护心愿单、聊天、记录每一次赴约的回忆——把两个人的日常串成一本共同的日记。
 
 在线 Demo：**https://haoyidechengzi.xyz** （已部署，绑定自有域名 + HTTPS，国内可直接访问）
+GitHub：**https://github.com/chengqianqian-ux/date-app**
 
 ## 📷 功能截图
 
 <p align="center">
   <img src="screenshots/home.png" width="280" alt="首页" />
-  <img src="screenshots/new.png" width="280" alt="发起邀请" />
+  <img src="screenshots/chat.png" width="280" alt="聊天室" />
   <img src="screenshots/wishlist.png" width="280" alt="心愿单" />
   <img src="screenshots/profile.png" width="280" alt="个人中心" />
 </p>
 
-> 左起：首页（纪念日倒计时 + 赴约统计 + 待回复红点）/ 发起邀请（表情贴纸）/ 心愿单 / 个人中心
+> 左起：首页（每日情话 + 纪念日倒计时 + 赴约统计 + 红点）/ 聊天室（左右气泡）/ 心愿单 / 个人中心
 
 ---
 
@@ -23,12 +24,16 @@
 |---|---|
 | 👫 情侣配对 | 一方生成 6 位配对码，另一方输入码完成绑定，一对一关系 |
 | 💌 约会邀请 | 发起邀请（标题/类型/时间/地点/留言），对方可接受 / 婉拒 / 取消 |
-| ✓ 完成打卡 | 已接受的约会可标记"完成"，首页统计累计赴约次数 |
+| ✓ 完成打卡 + 心情 | 已接受的约会标记完成时可选心情（😊🥰🥳😌😴），首页统计累计赴约次数 |
 | 📝 约会心愿单 | 把想一起做的事记下来，发邀请时一键选用，自动带出标题/类型/地点 |
+| 💬 情侣聊天室 | 实时聊天（轮询增量拉取，页面隐藏时暂停省流量），左右气泡区分双方 |
+| 📖 回忆时间线 | 所有完成的约会按时间排成时间线，可写/改"今日小记"，记录每一次赴约 |
 | 💞 纪念日倒计时 | 设置"在一起的日子"，首页实时显示「在一起第 N 天」+ 距下次约会倒计时 |
+| 💌 每日情话 | 首页每日一句情话（服务端内置池，按日期固定，两人当天一致） |
+| 🎂 生日提醒 | 设置各自生日，首页显示距下次生日还有几天 |
 | 🔔 状态提醒 | 收到待回复邀请时，Tab 上显示数字红点 |
 | 😘 表情贴纸 | 邀请留言支持一键插入可爱表情 |
-| 👤 个人中心 | 查看账号信息、修改密码、设置纪念日 |
+| 👤 个人中心 | 查看账号信息、修改密码、设置纪念日与生日 |
 | 🔐 记住登录 | 登录页可勾选"记住账号密码"，下次自动填入 |
 
 ---
@@ -65,6 +70,12 @@
 ### 鉴权
 - 登录/注册成功签发 7 天有效期的 JWT，前端存 localStorage
 - `authRequired` 中间件解析 token 并回查数据库，确保用户真实存在且信息最新
+- 密码用 bcrypt 不可逆哈希，不明文存储（故只能重置不能找回）
+
+### 聊天室准实时（Serverless 友好）
+- Vercel Serverless 函数有执行时长限制、不支持 WebSocket 长连接，故聊天用**轮询 + 增量接口**实现准实时
+- 前端每 2.5 秒拉取 `?after=最后消息id` 之后的增量消息；页面切到后台时暂停轮询省流量
+- 消息量小、双人场景下体验与 WebSocket 几乎无差，且零额外服务/零运维成本
 
 ### 时区处理
 - 纪念日字段为 `DATE` 类型，用 `to_char(anniversary, 'YYYY-MM-DD')` 在 SQL 层格式化返回，避免 pg 驱动返回 UTC 时间戳导致的前端日期偏移一天
@@ -73,13 +84,15 @@
 
 ```
 users        id, username(唯一), password_hash, nickname, couple_id, created_at
-couples      id, pair_code(唯一), anniversary, created_at
+couples      id, pair_code(唯一), anniversary, birthday_a, birthday_b, created_at
 invitations  id, couple_id, from_user_id, to_user_id, title, type,
-             meet_time, location, note, status, created_at, responded_at
+             meet_time, location, note, status, mood, diary, created_at, responded_at
 wishlists    id, couple_id, user_id, title, type, location, note, done, created_at
+messages     id, couple_id, user_id, content, created_at
 ```
 
 `invitations.status`：`pending` → `accepted`/`rejected`/`cancelled` → `completed`
+`invitations.mood`：happy / sweet / excited / calm / tired / rainy
 
 ---
 
